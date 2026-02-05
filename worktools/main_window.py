@@ -444,6 +444,10 @@ class MainWindow(QMainWindow):
         # 保存状态
         self._save_state()
         
+        # 清理更新线程
+        if hasattr(self, 'auto_updater') and self.auto_updater:
+            self.auto_updater.cleanup()
+        
         # 停用所有插件
         self.plugin_manager.deactivate_plugin(
             self.plugin_manager.get_active_plugin_name())

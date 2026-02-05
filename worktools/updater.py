@@ -421,6 +421,8 @@ class AutoUpdater:
     def __init__(self, parent=None):
         self.parent = parent
         self.update_dialog = None
+        self.checker = None
+        self.downloader = None
     
     def check_update(self, silent=False):
         """
@@ -431,6 +433,11 @@ class AutoUpdater:
         """
         self.silent = silent
         
+        # 停止之前的线程
+        if self.checker and self.checker.isRunning():
+            self.checker.quit()
+            self.checker.wait()
+        
         self.checker = UpdateChecker()
         self.checker.check_finished.connect(self._on_check_finished)
         self.checker.check_error.connect(self._on_check_error)
@@ -438,6 +445,10 @@ class AutoUpdater:
     
     def _on_check_finished(self, result):
         """检查完成"""
+        # 等待线程完成
+        if self.checker and self.checker.isRunning():
+            self.checker.wait()
+        
         if result['has_update']:
             # 显示更新对话框
             self.update_dialog = UpdateDialog(result, self.parent)
@@ -452,9 +463,22 @@ class AutoUpdater:
     
     def _on_check_error(self, error_msg):
         """检查错误"""
+        # 等待线程完成
+        if self.checker and self.checker.isRunning():
+            self.checker.wait()
+            
         if not self.silent:
             QMessageBox.warning(
                 self.parent,
                 "检查更新失败",
                 f"无法连接到更新服务器:\n{error_msg}"
             )
+    
+    def cleanup(self):
+        """清理资源"""
+        if self.checker and self.checker.isRunning():
+            self.checker.quit()
+            self.checker.wait()
+        if self.downloader and self.downloader.isRunning():
+            self.downloader.quit()
+            self.downloader.wait()

@@ -42,6 +42,9 @@ class WorkToolsApp(QApplication):
         # 创建主窗口
         self.main_window = MainWindow()
         
+        # 启动时更新检查器引用
+        self.startup_updater = None
+        
         # 设置异常处理
         self._setup_exception_handling()
         
@@ -188,8 +191,9 @@ class WorkToolsApp(QApplication):
         """启动时检查更新"""
         try:
             from .updater import AutoUpdater
-            updater = AutoUpdater(self.main_window)
-            updater.check_update(silent=True)  # 静默检查
+            # 保存引用以防止垃圾回收
+            self.startup_updater = AutoUpdater(self.main_window)
+            self.startup_updater.check_update(silent=True)  # 静默检查
         except Exception as e:
             logger.warning(f"启动时检查更新失败: {e}")
         

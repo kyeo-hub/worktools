@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+worktools.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Update packages (these should be built by CI)
+WorkTools_*.zip
+update_package/
+_site/
+
+# Temporary files
+*.tmp
+*.bak
+*.orig
+
+# But keep the version.json
+!version.json
+!server/version.json

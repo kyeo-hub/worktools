@@ -1,0 +1,6 @@
+{
+  "version": "1.0.0",
+  "app_name": "WorkTools",
+  "update_url": "https://kyeo-hub.github.io/worktools/updates/version.json",
+  "download_url": "https://kyeo-hub.github.io/worktools/updates/"
+}

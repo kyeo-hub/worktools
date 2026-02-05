@@ -1,0 +1,153 @@
+# -*- coding: utf-8 -*-
+
+"""
+打包脚本
+使用PyInstaller打包应用程序
+"""
+
+import os
+import sys
+import shutil
+import json
+
+# 版本信息
+VERSION = "1.0.0"
+APP_NAME = "WorkTools"
+
+def clean_build():
+    """清理构建目录"""
+    dirs_to_remove = ['build', 'dist', '__pycache__']
+    for dir_name in dirs_to_remove:
+        if os.path.exists(dir_name):
+            print(f"删除 {dir_name}...")
+            shutil.rmtree(dir_name)
+    
+    # 删除.spec文件
+    for file in os.listdir('.'):
+        if file.endswith('.spec'):
+            print(f"删除 {file}...")
+            os.remove(file)
+
+def write_version_file():
+    """写入版本信息文件"""
+    version_info = {
+        "version": VERSION,
+        "app_name": APP_NAME,
+        "update_url": "https://your-server.com/updates/version.json",
+        "download_url": "https://your-server.com/updates/"
+    }
+    
+    with open('version.json', 'w', encoding='utf-8') as f:
+        json.dump(version_info, f, indent=2)
+    
+    print(f"版本信息已写入: {VERSION}")
+
+def build():
+    """执行打包"""
+    print("开始打包...")
+    
+    # 确保版本文件存在
+    write_version_file()
+    
+    # PyInstaller参数
+    args = [
+        'main.py',
+        '--name=%s' % APP_NAME,
+        '--windowed',
+        '--onefile',  # 打包成单个exe
+        '--clean',
+        '--noconfirm',
+        # 图标
+        '--icon=worktools/resources/icons/app.ico' if os.path.exists('worktools/resources/icons/app.ico') else '',
+        # 添加数据文件
+        '--add-data=worktools;worktools',
+        '--add-data=version.json;.',
+        # 隐藏导入
+        '--hidden-import=PyQt5.sip',
+        '--hidden-import=PyQt5.QtCore',
+        '--hidden-import=PyQt5.QtGui',
+        '--hidden-import=PyQt5.QtWidgets',
+        '--hidden-import=PIL',
+        '--hidden-import=pandas',
+        '--hidden-import=numpy',
+    ]
+    
+    # 过滤空参数
+    args = [arg for arg in args if arg]
+    
+    # 执行打包
+    import PyInstaller.__main__
+    PyInstaller.__main__.run(args)
+    
+    print("\n打包完成！")
+    print(f"输出目录: dist/{APP_NAME}.exe")
+
+def create_update_package():
+    """创建更新包"""
+    import zipfile
+    
+    print("创建更新包...")
+    
+    # 创建更新目录
+    update_dir = 'update_package'
+    if os.path.exists(update_dir):
+        shutil.rmtree(update_dir)
+    os.makedirs(update_dir)
+    
+    # 复制主程序
+    exe_path = f'dist/{APP_NAME}.exe'
+    if os.path.exists(exe_path):
+        shutil.copy2(exe_path, update_dir)
+    
+    # 复制版本文件
+    shutil.copy2('version.json', update_dir)
+    
+    # 创建ZIP包
+    zip_name = f'{APP_NAME}_v{VERSION}.zip'
+    with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for root, dirs, files in os.walk(update_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, update_dir)
+                zf.write(file_path, arcname)
+    
+    print(f"更新包已创建: {zip_name}")
+    
+    # 生成服务器端version.json
+    server_version = {
+        "version": VERSION,
+        "app_name": APP_NAME,
+        "changelog": [
+            "新增图片水印功能",
+            "支持时间地点水印",
+            "支持实时天气获取"
+        ],
+        "download_url": f"https://your-server.com/updates/{zip_name}",
+        "mandatory": False,
+        "published_at": "2024-02-04"
+    }
+    
+    with open('server_version.json', 'w', encoding='utf-8') as f:
+        json.dump(server_version, f, indent=2, ensure_ascii=False)
+    
+    print("服务器版本文件已创建: server_version.json")
+    
+    # 清理临时目录
+    shutil.rmtree(update_dir)
+
+if __name__ == '__main__':
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='打包工具')
+    parser.add_argument('command', choices=['clean', 'build', 'update'], 
+                       help='命令: clean=清理, build=打包, update=创建更新包')
+    
+    args = parser.parse_args()
+    
+    if args.command == 'clean':
+        clean_build()
+    elif args.command == 'build':
+        clean_build()
+        build()
+    elif args.command == 'update':
+        create_update_package()

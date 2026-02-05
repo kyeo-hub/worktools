@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "app_name": "WorkTools",
+  "changelog": [
+    "初始版本"
+  ],
+  "download_url": "https://kyeo-hub.github.io/worktools/updates/WorkTools_v1.0.0.zip",
+  "mandatory": false,
+  "published_at": "2024-02-05",
+  "min_version": "1.0.0"
+}

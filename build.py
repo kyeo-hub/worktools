@@ -10,8 +10,9 @@ import sys
 import shutil
 import json
 
-# 版本信息
-VERSION = "1.0.0"
+# 版本信息 - 优先从环境变量读取，用于CI/CD
+import os
+VERSION = os.environ.get('VERSION', '1.0.0')
 APP_NAME = "WorkTools"
 
 def clean_build():
@@ -33,8 +34,8 @@ def write_version_file():
     version_info = {
         "version": VERSION,
         "app_name": APP_NAME,
-        "update_url": "https://your-server.com/updates/version.json",
-        "download_url": "https://your-server.com/updates/"
+        "update_url": "https://tools.kyeo.top/updates/version.json",
+        "download_url": f"https://tools.kyeo.top/updates/WorkTools_v{VERSION}.zip"
     }
     
     with open('version.json', 'w', encoding='utf-8') as f:

@@ -96,12 +96,14 @@ class UpdateChecker(QThread):
             if os.path.exists(version_file):
                 with open(version_file, 'r', encoding='utf-8') as f:
                     info = json.load(f)
-                    return info.get('update_url', '')
+                    url = info.get('update_url', '')
+                    if url and url != 'https://your-server.com/updates/version.json':
+                        return url
         except:
             pass
         
-        # 默认URL（请修改为你的服务器地址）
-        return 'https://your-server.com/updates/version.json'
+        # 默认URL - 使用已部署的服务器
+        return 'https://tools.kyeo.top/updates/version.json'
     
     def _get_resource_path(self, relative_path):
         """获取资源文件的绝对路径（支持开发和打包环境）"""
@@ -333,25 +335,60 @@ class UpdateDialog(QDialog):
         if sys.platform == 'win32':
             script_path = os.path.join(tempfile.gettempdir(), 'worktools_updater.bat')
             current_exe = sys.executable
+            current_dir = os.path.dirname(current_exe)
+            
+            # 检查解压后的文件结构
+            exe_found = False
+            for root, dirs, files in os.walk(extract_dir):
+                for file in files:
+                    if file.lower().endswith('.exe'):
+                        exe_found = True
+                        logger.info(f"找到exe文件: {file}")
+            
+            if not exe_found:
+                logger.warning("警告: 更新包中未找到exe文件!")
             
             script_content = f'''@echo off
 chcp 65001 >nul
-echo 正在安装更新...
+echo [WorkTools] 正在安装更新...
+echo [WorkTools] 目标目录: {current_dir}
 timeout /t 2 /nobreak >nul
 
-REM 关闭原程序进程
-taskkill /F /IM "{os.path.basename(current_exe)}" 2>nul
-timeout /t 1 /nobreak >nul
+REM 等待原程序完全关闭
+:check_process
+tasklist | findstr /i "{os.path.basename(current_exe)}" >nul
+if %errorlevel% == 0 (
+    echo [WorkTools] 等待原程序关闭...
+    taskkill /F /IM "{os.path.basename(current_exe)}" 2>nul
+    timeout /t 1 /nobreak >nul
+    goto check_process
+)
 
 REM 复制新文件
-xcopy /Y /E "{extract_dir}\\*" "{os.path.dirname(current_exe)}\\"
+echo [WorkTools] 正在复制更新文件...
+if exist "{extract_dir}\\WorkTools.exe" (
+    copy /Y "{extract_dir}\\WorkTools.exe" "{current_dir}\\"
+    echo [WorkTools] WorkTools.exe 已更新
+) else (
+    echo [WorkTools] 错误: 未找到 WorkTools.exe!
+    dir "{extract_dir}\\"
+    pause
+    exit 1
+)
+
+REM 复制version.json
+if exist "{extract_dir}\\version.json" (
+    copy /Y "{extract_dir}\\version.json" "{current_dir}\\"
+    echo [WorkTools] version.json 已更新
+)
 
 REM 删除临时文件
-rmdir /S /Q "{extract_dir}"
-del "{self.downloaded_file}"
+echo [WorkTools] 清理临时文件...
+if exist "{extract_dir}" rmdir /S /Q "{extract_dir}"
+if exist "{self.downloaded_file}" del "{self.downloaded_file}"
 
 REM 启动新版本
-echo 启动新版本...
+echo [WorkTools] 启动新版本...
 start "" "{current_exe}"
 
 REM 删除自身
@@ -359,6 +396,8 @@ del "%~f0"
 '''
             with open(script_path, 'w', encoding='utf-8') as f:
                 f.write(script_content)
+            
+            logger.info(f"更新脚本已创建: {script_path}")
     
     def _execute_update(self):
         """执行更新"""

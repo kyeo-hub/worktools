@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
   "app_name": "WorkTools",
-  "update_url": "https://your-server.com/updates/version.json",
-  "download_url": "https://your-server.com/updates/"
+  "update_url": "https://tools.kyeo.top/updates/version.json",
+  "download_url": "https://tools.kyeo.top/updates/"
 }

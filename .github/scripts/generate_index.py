@@ -176,7 +176,7 @@ def generate_index():
     with open('_site/index.html', 'w', encoding='utf-8') as f:
         f.write(html)
     
-    print("✅ 首页已生成: _site/index.html")
+    print("[OK] Index page generated: _site/index.html")
 
 if __name__ == '__main__':
     generate_index()

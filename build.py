@@ -59,9 +59,9 @@ def build():
         '--noconfirm',
         # 图标
         '--icon=worktools/resources/icons/app.ico' if os.path.exists('worktools/resources/icons/app.ico') else '',
-        # 添加数据文件
-        '--add-data=worktools;worktools',
-        '--add-data=version.json;.',
+        # 添加数据文件 (Windows使用; Linux/Mac使用:)
+        '--add-data=worktools;worktools' if sys.platform == 'win32' else '--add-data=worktools:worktools',
+        '--add-data=version.json;.' if sys.platform == 'win32' else '--add-data=version.json:.',
         # 隐藏导入
         '--hidden-import=PyQt5.sip',
         '--hidden-import=PyQt5.QtCore',
@@ -70,6 +70,14 @@ def build():
         '--hidden-import=PIL',
         '--hidden-import=pandas',
         '--hidden-import=numpy',
+        '--hidden-import=numpy.core.multiarray',
+        '--hidden-import=openpyxl',
+        '--hidden-import=psutil',
+        # 排除不需要的库（减少打包体积）
+        '--exclude-module=matplotlib',
+        '--exclude-module=pytest',
+        '--exclude-module=PyQt6',
+        '--exclude-module=PyQt6-Qt6',
     ]
     
     # 过滤空参数

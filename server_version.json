@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "app_name": "WorkTools",
+  "changelog": [
+    "新增图片水印功能",
+    "支持时间地点水印",
+    "支持实时天气获取"
+  ],
+  "download_url": "https://your-server.com/updates/WorkTools_v1.0.0.zip",
+  "mandatory": false,
+  "published_at": "2024-02-04"
+}

@@ -64,37 +64,37 @@ def main():
         # 创建并显示主窗口
         work_tools = WorkToolsApp(sys.argv)
     
-    # 设置应用信息
-    work_tools.setApplicationName("工作工具")
-    work_tools.setApplicationVersion("0.1.0")
-    work_tools.setOrganizationName("WorkTools")
-    
-    # 设置应用图标
-    icon_path = get_resource_path("worktools/resources/icons/app.png")
-    if os.path.exists(icon_path):
-        work_tools.setWindowIcon(QIcon(icon_path))
-    else:
-        logger.warning(f"图标文件不存在: {icon_path}")
-    
-    # 加载中文翻译（可选）
-    translator = QTranslator()
-    locale = QLocale.system().name()
-    qm_path = get_resource_path(f"worktools/i18n/worktools_{locale}.qm")
-    if os.path.exists(qm_path):
-        if translator.load(qm_path):
-            work_tools.installTranslator(translator)
-            logger.info(f"已加载翻译: {locale}")
+        # 设置应用信息
+        work_tools.setApplicationName("工作工具")
+        work_tools.setApplicationVersion("0.1.0")
+        work_tools.setOrganizationName("WorkTools")
+        
+        # 设置应用图标
+        icon_path = get_resource_path("worktools/resources/icons/app.png")
+        if os.path.exists(icon_path):
+            work_tools.setWindowIcon(QIcon(icon_path))
         else:
-            logger.warning(f"翻译加载失败: {qm_path}")
-    else:
-        logger.info(f"翻译文件不存在: {qm_path}，跳过翻译")
-    
-    work_tools.show()
-    
-    # 运行应用程序
-    exit_code = work_tools.run()
-    logger.info(f"应用程序退出，退出码: {exit_code}")
-    sys.exit(exit_code)
+            logger.warning(f"图标文件不存在: {icon_path}")
+        
+        # 加载中文翻译（可选）
+        translator = QTranslator()
+        locale = QLocale.system().name()
+        qm_path = get_resource_path(f"worktools/i18n/worktools_{locale}.qm")
+        if os.path.exists(qm_path):
+            if translator.load(qm_path):
+                work_tools.installTranslator(translator)
+                logger.info(f"已加载翻译: {locale}")
+            else:
+                logger.warning(f"翻译加载失败: {qm_path}")
+        else:
+            logger.info(f"翻译文件不存在: {qm_path}，跳过翻译")
+        
+        work_tools.show()
+        
+        # 运行应用程序
+        exit_code = work_tools.run()
+        logger.info(f"应用程序退出，退出码: {exit_code}")
+        sys.exit(exit_code)
     
     except Exception as e:
         # 捕获未处理的异常，防止窗口直接关闭

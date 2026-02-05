@@ -49,23 +49,17 @@ jobs:
     - name: Update Version Files
       env:
         VERSION: ${{ env.VERSION }}
+      shell: pwsh
       run: |
-        python -c "
-import os
-import json
-
-version = os.environ['VERSION']
-
-with open('version.json', 'r', encoding='utf-8') as f:
-    data = json.load(f)
-data['version'] = version
-data['update_url'] = 'https://tools.kyeo.top/updates/version.json'
-data['download_url'] = f'https://tools.kyeo.top/updates/WorkTools_v{version}.zip'
-with open('version.json', 'w', encoding='utf-8') as f:
-    json.dump(data, f, indent=2, ensure_ascii=False)
-
-print(f'version.json updated to: {version}')
-"
+        $version = $env:VERSION
+        
+        $jsonContent = Get-Content 'version.json' -Raw | ConvertFrom-Json
+        $jsonContent.version = $version
+        $jsonContent.update_url = 'https://tools.kyeo.top/updates/version.json'
+        $jsonContent.download_url = "https://tools.kyeo.top/updates/WorkTools_v$version.zip"
+        $jsonContent | ConvertTo-Json -Depth 10 | Set-Content 'version.json' -Encoding UTF8
+        
+        Write-Host "version.json updated to: $version"
     
     - name: Build Application
       env:
@@ -116,36 +110,29 @@ print(f'version.json updated to: {version}')
         Compress-Archive -Path update_package/* -DestinationPath "WorkTools_v$env:VERSION.zip" -Force
         
         # 生成服务器版本文件
-        python -c "
-import os
-import json
-
-version = os.environ['VERSION']
-
-changelog = [
-    '新增图片水印功能',
-    '支持时间地点水印样式',
-    '支持实时天气获取',
-    '支持自定义水印样式',
-    '新增API配置功能',
-    '新增自动更新功能'
-]
-
-server_version = {
-    'version': version,
-    'app_name': 'WorkTools',
-    'changelog': changelog,
-    'download_url': f'https://tools.kyeo.top/updates/WorkTools_v{version}.zip',
-    'mandatory': False,
-    'published_at': '2024-02-05',
-    'min_version': '1.0.0'
-}
-
-with open('server/version.json', 'w', encoding='utf-8') as f:
-    json.dump(server_version, f, indent=2, ensure_ascii=False)
-
-print(f'服务器版本文件已生成: {version}')
-"
+        $version = $env:VERSION
+        $changelog = @(
+            "新增图片水印功能",
+            "支持时间地点水印样式",
+            "支持实时天气获取",
+            "支持自定义水印样式",
+            "新增API配置功能",
+            "新增自动更新功能"
+        )
+        
+        $serverVersion = @{
+            version = $version
+            app_name = "WorkTools"
+            changelog = $changelog
+            download_url = "https://tools.kyeo.top/updates/WorkTools_v$version.zip"
+            mandatory = $false
+            published_at = "2024-02-05"
+            min_version = "1.0.0"
+        }
+        
+        $serverVersion | ConvertTo-Json -Depth 10 | Set-Content 'server/version.json' -Encoding UTF8
+        
+        Write-Host "服务器版本文件已生成: $version"
         
         # 清理
         Remove-Item -Recurse -Force update_package

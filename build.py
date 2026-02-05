@@ -20,13 +20,13 @@ def clean_build():
     dirs_to_remove = ['build', 'dist', '__pycache__']
     for dir_name in dirs_to_remove:
         if os.path.exists(dir_name):
-            print(f"删除 {dir_name}...")
+            print(f"[Clean] Removing {dir_name}...")
             shutil.rmtree(dir_name)
     
     # 删除.spec文件
     for file in os.listdir('.'):
         if file.endswith('.spec'):
-            print(f"删除 {file}...")
+            print(f"[Clean] Removing {file}...")
             os.remove(file)
 
 def write_version_file():
@@ -41,11 +41,11 @@ def write_version_file():
     with open('version.json', 'w', encoding='utf-8') as f:
         json.dump(version_info, f, indent=2)
     
-    print(f"版本信息已写入: {VERSION}")
+    print(f"[Version] Written: {VERSION}")
 
 def build():
     """执行打包"""
-    print("开始打包...")
+    print("[Build] Starting build...")
     
     # 确保版本文件存在
     write_version_file()
@@ -88,14 +88,14 @@ def build():
     import PyInstaller.__main__
     PyInstaller.__main__.run(args)
     
-    print("\n打包完成！")
-    print(f"输出目录: dist/{APP_NAME}.exe")
+    print("[Build] Build completed!")
+    print(f"[Build] Output: dist/{APP_NAME}.exe")
 
 def create_update_package():
     """创建更新包"""
     import zipfile
     
-    print("创建更新包...")
+    print("[Package] Creating update package...")
     
     # 创建更新目录
     update_dir = 'update_package'
@@ -120,7 +120,7 @@ def create_update_package():
                 arcname = os.path.relpath(file_path, update_dir)
                 zf.write(file_path, arcname)
     
-    print(f"更新包已创建: {zip_name}")
+    print(f"[Package] Created: {zip_name}")
     
     # 生成服务器端version.json
     server_version = {
@@ -139,7 +139,7 @@ def create_update_package():
     with open('server_version.json', 'w', encoding='utf-8') as f:
         json.dump(server_version, f, indent=2, ensure_ascii=False)
     
-    print("服务器版本文件已创建: server_version.json")
+    print("[Package] Server version file created: server_version.json")
     
     # 清理临时目录
     shutil.rmtree(update_dir)

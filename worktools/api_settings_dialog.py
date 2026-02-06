@@ -16,7 +16,7 @@ class APISettingsDialog(QDialog):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("API设置")
+        self.setWindowTitle("系统设置 - API配置")
         self.setMinimumSize(500, 350)
         self.settings = QSettings("WorkTools", "PyQtWorkTools")
         

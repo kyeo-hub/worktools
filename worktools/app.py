@@ -33,7 +33,7 @@ class WorkToolsApp(QApplication):
         
         # 应用设置
         self.setApplicationName("PyQt工作工具")
-        self.setApplicationVersion("0.1.0")
+        self.setApplicationVersion("1.0.9")
         self.setOrganizationName("WorkTools")
         
         # 设置应用程序样式
@@ -176,11 +176,6 @@ class WorkToolsApp(QApplication):
         
     def _setup_timers(self):
         """设置定时器"""
-        # 创建一个定时器，用于定期保存状态
-        self.auto_save_timer = QTimer()
-        self.auto_save_timer.timeout.connect(self._auto_save)
-        self.auto_save_timer.start(5 * 60 * 1000)  # 5分钟自动保存一次
-        
         # 延迟5秒后检查更新（避免影响启动速度）
         self.update_check_timer = QTimer()
         self.update_check_timer.setSingleShot(True)
@@ -196,14 +191,6 @@ class WorkToolsApp(QApplication):
             self.startup_updater.check_update(silent=True)  # 静默检查
         except Exception as e:
             logger.warning(f"启动时检查更新失败: {e}")
-        
-    def _auto_save(self):
-        """自动保存状态"""
-        try:
-            self.main_window._save_state()
-            logger.info("自动保存完成")
-        except Exception as e:
-            logger.error(f"自动保存失败: {str(e)}")
             
     def show(self):
         """显示主窗口"""

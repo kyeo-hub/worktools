@@ -113,6 +113,34 @@ class BasePlugin(QWidget):
         """
         return None
         
+    def _show_settings_dialog(self):
+        """
+        显示插件设置对话框（可选）
+        子类可以重写此方法来显示自定义设置对话框
+        
+        Note:
+            优先使用此方法，如果没有实现则使用 get_settings_widget()
+        """
+        pass
+        
+    def has_settings(self) -> bool:
+        """
+        检查插件是否有设置选项
+        
+        Returns:
+            True表示有设置选项，False表示没有
+        """
+        # 检查是否实现了 _show_settings_dialog 方法
+        if hasattr(self, '_show_settings_dialog') and callable(self._show_settings_dialog):
+            # 检查是否是 BasePlugin 的默认实现
+            # 如果子类重写了该方法，该方法属于子类而不是 BasePlugin
+            method = getattr(self, '_show_settings_dialog')
+            if method.__func__.__qualname__.startswith('BasePlugin'):
+                return False
+            return True
+        # 检查是否有设置控件
+        return self.get_settings_widget() is not None
+        
     def _setup_ui(self):
         """
         设置用户界面

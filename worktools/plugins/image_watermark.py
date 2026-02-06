@@ -1214,3 +1214,8 @@ class ImageWatermarkPlugin(BasePlugin):
         self.output_dir_edit.clear()
         self._update_image_list()
         self.process_btn.setEnabled(False)
+        
+    def _show_settings_dialog(self):
+        """显示设置对话框（API配置）"""
+        dialog = APISettingsDialog(self)
+        dialog.exec_()

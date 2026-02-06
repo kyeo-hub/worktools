@@ -56,7 +56,8 @@ class Workspace(QWidget):
         
         # 插件显示区域
         self.stacked_widget = QStackedWidget()
-        main_layout.addWidget(self.stacked_widget)
+        self.stacked_widget.setMinimumHeight(400)  # 设置最小高度
+        main_layout.addWidget(self.stacked_widget, 1)  # 添加拉伸因子
         
         # 初始状态显示
         self._show_empty_state()
@@ -170,6 +171,12 @@ class Workspace(QWidget):
             return True
             
         try:
+            # 停用这个插件
+            if self._current_plugin and self._current_plugin in self._plugins:
+                old_plugin_widget = self._plugins[self._current_plugin]['widget']
+                if hasattr(old_plugin_widget, 'on_deactivate'):
+                    old_plugin_widget.on_deactivate()
+            
             # 切换到指定插件
             plugin_info = self._plugins[plugin_name]
             self.stacked_widget.setCurrentIndex(plugin_info['index'])
@@ -179,10 +186,14 @@ class Workspace(QWidget):
             
             # 检查插件是否有设置界面
             plugin = plugin_info['widget']
-            if hasattr(plugin, 'get_settings_widget') and callable(plugin.get_settings_widget):
-                self.settings_button.setEnabled(True)
+            if hasattr(plugin, 'has_settings') and callable(plugin.has_settings):
+                self.settings_button.setEnabled(plugin.has_settings())
             else:
                 self.settings_button.setEnabled(False)
+            
+            # 调用新插件的 on_activate
+            if hasattr(plugin, 'on_activate'):
+                plugin.on_activate()
                 
             # 更新当前插件
             old_plugin = self._current_plugin
@@ -228,11 +239,28 @@ class Workspace(QWidget):
             
         try:
             plugin = self.get_plugin_widget(self._current_plugin)
-            if plugin and hasattr(plugin, 'get_settings_widget') and callable(plugin.get_settings_widget):
+            if not plugin:
+                return
+                
+            # 优先调用插件的 _show_settings_dialog 方法（如果存在）
+            if hasattr(plugin, '_show_settings_dialog') and callable(plugin._show_settings_dialog):
+                plugin._show_settings_dialog()
+                logger.info(f"显示插件 {self._current_plugin} 的设置对话框")
+            # 其次调用 get_settings_widget 方法（如果存在）
+            elif hasattr(plugin, 'get_settings_widget') and callable(plugin.get_settings_widget):
                 settings_widget = plugin.get_settings_widget()
                 if settings_widget:
-                    # 这里可以创建一个对话框显示设置界面
-                    # 为了简化，暂时只打印日志
+                    from PyQt5.QtWidgets import QDialog, QVBoxLayout
+                    # 创建对话框显示设置界面
+                    dialog = QDialog(self)
+                    dialog.setWindowTitle(f"{self._current_plugin} 设置")
+                    layout = QVBoxLayout(dialog)
+                    layout.addWidget(settings_widget)
+                    dialog.exec_()
                     logger.info(f"显示插件 {self._current_plugin} 的设置界面")
+            else:
+                logger.info(f"插件 {self._current_plugin} 没有设置界面")
+                from PyQt5.QtWidgets import QMessageBox
+                QMessageBox.information(self, "设置", f"{self._current_plugin} 暂无设置选项")
         except Exception as e:
             logger.error(f"显示插件 {self._current_plugin} 设置界面失败: {str(e)}")

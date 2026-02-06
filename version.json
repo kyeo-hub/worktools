@@ -1,6 +1,17 @@
 {
-  "version": "1.0.0",
+  "version": "1.2.0",
   "app_name": "WorkTools",
   "update_url": "https://tools.kyeo.top/updates/version.json",
-  "download_url": "https://tools.kyeo.top/updates/"
+  "download_url": "https://tools.kyeo.top/updates/",
+  "release_date": "2025-12-11",
+  "changes": [
+    "完善插件管理系统，支持插件文件名与ID完全对应",
+    "优化插件管理器UI，增加描述列，改善显示效果",
+    "实现插件依赖自动安装，提升用户体验",
+    "将所有插件打包为独立zip文件，实现按需下载",
+    "调整插件管理器为页内操作，不再使用弹窗提示",
+    "修正插件卸载功能，支持所有插件正常卸载",
+    "优化表格显示，按钮文字更清晰，操作更直观",
+    "v1.1.0 的所有修改"
+  ]
 }

@@ -6,19 +6,16 @@
 """
 
 import os
-import json
 import logging
-from typing import Dict, Optional
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, 
+from PyQt5.QtWidgets import (QMainWindow, QWidget, QHBoxLayout, QVBoxLayout,
                            QSplitter, QMenuBar, QMenu, QAction, QStatusBar,
-                           QMessageBox, QFileDialog, QToolBar)
-from PyQt5.QtCore import Qt, QSize, QTimer, pyqtSignal, QSettings
+                           QMessageBox)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QSettings
 from PyQt5.QtGui import QIcon, QKeySequence, QFont
 
 from .plugin_manager import PluginManager
 from .navigation import NavigationPanel
 from .workspace import Workspace
-from .api_settings_dialog import APISettingsDialog
 from .updater import AutoUpdater
 
 logger = logging.getLogger(__name__)
@@ -58,9 +55,6 @@ class MainWindow(QMainWindow):
         # 加载插件
         self._load_plugins()
         
-        # 恢复窗口状态
-        self._restore_state()
-        
     def _setup_ui(self):
         """设置用户界面"""
         # 创建中央控件
@@ -91,65 +85,6 @@ class MainWindow(QMainWindow):
     def _setup_menu(self):
         """设置菜单栏"""
         menubar = self.menuBar()
-        
-        # 文件菜单
-        file_menu = menubar.addMenu("文件(&F)")
-        
-        # 保存状态动作
-        save_state_action = QAction("保存状态(&S)", self)
-        save_state_action.setShortcut(QKeySequence("Ctrl+S"))
-        save_state_action.setStatusTip("保存当前应用状态")
-        save_state_action.triggered.connect(self._save_state)
-        file_menu.addAction(save_state_action)
-        
-        # 恢复状态动作
-        restore_state_action = QAction("恢复状态(&R)", self)
-        restore_state_action.setShortcut(QKeySequence("Ctrl+R"))
-        restore_state_action.setStatusTip("恢复上次保存的应用状态")
-        restore_state_action.triggered.connect(self._restore_saved_state)
-        file_menu.addAction(restore_state_action)
-        
-        file_menu.addSeparator()
-        
-        # 退出动作
-        exit_action = QAction("退出(&X)", self)
-        exit_action.setShortcut(QKeySequence("Ctrl+Q"))
-        exit_action.setStatusTip("退出应用程序")
-        exit_action.triggered.connect(self.close)
-        file_menu.addAction(exit_action)
-        
-        # 视图菜单
-        view_menu = menubar.addMenu("视图(&V)")
-        
-        # 切换主题动作
-        toggle_theme_action = QAction("切换主题(&T)", self)
-        toggle_theme_action.setStatusTip("切换应用主题")
-        toggle_theme_action.triggered.connect(self._toggle_theme)
-        view_menu.addAction(toggle_theme_action)
-        
-        # 重置布局动作
-        reset_layout_action = QAction("重置布局(&L)", self)
-        reset_layout_action.setStatusTip("重置窗口布局")
-        reset_layout_action.triggered.connect(self._reset_layout)
-        view_menu.addAction(reset_layout_action)
-        
-        # 工具菜单
-        tools_menu = menubar.addMenu("工具(&T)")
-        
-        # 重新加载插件动作
-        reload_plugins_action = QAction("重新加载插件(&R)", self)
-        reload_plugins_action.setStatusTip("重新加载所有插件")
-        reload_plugins_action.triggered.connect(self._reload_plugins)
-        tools_menu.addAction(reload_plugins_action)
-        
-        # 设置菜单
-        settings_menu = menubar.addMenu("设置(&S)")
-        
-        # API配置动作
-        api_settings_action = QAction("API配置(&A)...", self)
-        api_settings_action.setStatusTip("配置百度/高德地图API Key")
-        api_settings_action.triggered.connect(self._show_api_settings)
-        settings_menu.addAction(api_settings_action)
         
         # 帮助菜单
         help_menu = menubar.addMenu("帮助(&H)")
@@ -295,155 +230,31 @@ class MainWindow(QMainWindow):
         
         return True
         
-    def _save_state(self):
-        """保存应用状态"""
-        try:
-            # 保存窗口状态
-            self.settings.setValue("geometry", self.saveGeometry())
-            self.settings.setValue("windowState", self.saveState())
-            
-            # 保存插件状态
-            plugin_states = self.plugin_manager.save_all_plugin_states()
-            self.settings.setValue("pluginStates", json.dumps(plugin_states))
-            
-            # 保存当前激活的插件
-            current_plugin = self.plugin_manager.get_active_plugin_name()
-            if current_plugin:
-                self.settings.setValue("currentPlugin", current_plugin)
-                
-            self.status_bar.showMessage("状态已保存", 3000)
-            logger.info("应用状态已保存")
-        except Exception as e:
-            logger.error(f"保存状态失败: {str(e)}")
-            QMessageBox.warning(self, "保存失败", f"保存状态时发生错误: {str(e)}")
-            
-    def _restore_state(self):
-        """恢复应用状态"""
-        try:
-            # 恢复窗口状态
-            geometry = self.settings.value("geometry")
-            if geometry:
-                self.restoreGeometry(geometry)
-                
-            window_state = self.settings.value("windowState")
-            if window_state:
-                self.restoreState(window_state)
-                
-            # 恢复插件状态
-            plugin_states_json = self.settings.value("pluginStates")
-            if plugin_states_json:
-                plugin_states = json.loads(plugin_states_json)
-                self.plugin_manager.restore_all_plugin_states(plugin_states)
-                
-            # 恢复当前激活的插件
-            current_plugin = self.settings.value("currentPlugin")
-            if current_plugin:
-                QTimer.singleShot(100, lambda: self.activate_plugin(current_plugin))
-                
-            logger.info("应用状态已恢复")
-        except Exception as e:
-            logger.error(f"恢复状态失败: {str(e)}")
-            
-    def _restore_saved_state(self):
-        """从文件恢复保存的状态"""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "选择状态文件", "", "JSON文件 (*.json)")
-        if not file_path:
-            return
-            
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                state_data = json.load(f)
-                
-            # 恢复插件状态
-            if "pluginStates" in state_data:
-                self.plugin_manager.restore_all_plugin_states(state_data["pluginStates"])
-                
-            # 恢复当前激活的插件
-            if "currentPlugin" in state_data:
-                self.activate_plugin(state_data["currentPlugin"])
-                
-            self.status_bar.showMessage("状态已恢复", 3000)
-            logger.info(f"从文件 {file_path} 恢复状态")
-        except Exception as e:
-            logger.error(f"从文件恢复状态失败: {str(e)}")
-            QMessageBox.warning(self, "恢复失败", f"从文件恢复状态时发生错误: {str(e)}")
-            
-    def _toggle_theme(self):
-        """切换主题"""
-        # 这里可以实现主题切换逻辑
-        self.status_bar.showMessage("主题切换功能待实现", 3000)
-        
-    def _reset_layout(self):
-        """重置布局"""
-        # 重置窗口大小和位置
-        self.resize(1000, 700)
-        self.move(100, 100)
-        
-        # 重置分割器比例
-        central_widget = self.centralWidget()
-        if isinstance(central_widget, QWidget):
-            splitter = central_widget.findChild(QSplitter)
-            if splitter:
-                splitter.setSizes([200, 800])
-                
-        self.status_bar.showMessage("布局已重置", 3000)
-        
-    def _reload_plugins(self):
-        """重新加载插件"""
-        # 清除当前插件
-        self.plugin_manager = PluginManager(self)
-        self.workspace = Workspace()
-        
-        # 重新连接信号
-        self._connect_signals()
-        
-        # 重新加载插件
-        self._load_plugins()
-        
-        # 更新中央控件
-        central_widget = QWidget()
-        main_layout = QVBoxLayout(central_widget)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        
-        splitter = QSplitter(Qt.Horizontal)
-        main_layout.addWidget(splitter)
-        
-        splitter.addWidget(self.navigation_panel)
-        splitter.addWidget(self.workspace)
-        
-        splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 4)
-        
-        self.setCentralWidget(central_widget)
-        
-        self.status_bar.showMessage("插件已重新加载", 3000)
-        
     def _show_about(self):
         """显示关于对话框"""
         QMessageBox.about(
             self,
             "关于",
-            "PyQt工作工具 v0.1.0\n\n"
+            "WorkTools v1.0.9\n\n"
             "一个基于PyQt的模块化工作工具集合\n"
-            "支持插件式架构，可动态扩展功能"
+            "支持插件式架构，可动态扩展功能\n\n"
+            "当前功能模块：\n"
+            "• 文本处理工具\n"
+            "• 文件管理器\n"
+            "• 系统工具\n"
+            "• 月汇总工具\n"
+            "• Excel合并工具\n"
+            "• Excel去重工具\n"
+            "• 图片水印工具"
         )
 
     def _check_update(self):
         """检查更新"""
         self.status_bar.showMessage("正在检查更新...", 3000)
         self.auto_updater.check_update(silent=False)
-
-    def _show_api_settings(self):
-        """显示API设置对话框"""
-        dialog = APISettingsDialog(self)
-        dialog.exec_()
         
     def closeEvent(self, event):
         """窗口关闭事件"""
-        # 保存状态
-        self._save_state()
-        
         # 清理更新线程
         if hasattr(self, 'auto_updater') and self.auto_updater:
             self.auto_updater.cleanup()

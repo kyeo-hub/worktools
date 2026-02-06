@@ -145,12 +145,31 @@ jobs:
         Write-Host "更新包创建完成"
         Get-ChildItem WorkTools_v*.zip | Select-Object Name, @{N="Size(MB)";E={[math]::Round($_.Length/1MB,2)}}
     
+    - name: Build and Package Plugins
+      env:
+        VERSION: ${{ env.VERSION }}
+      shell: pwsh
+      run: |
+        Write-Host "构建插件包，版本: $env:VERSION"
+        
+        # 运行插件打包脚本
+        python build_plugins.py
+        
+        # 检查插件包是否生成成功
+        if (-not (Test-Path "plugin_packages/plugins.json")) {
+          Write-Error "[ERROR] 插件包生成失败"
+          exit 1
+        }
+        
+        Write-Host "[OK] 插件包构建完成"
+    
     - name: Prepare Pages
       env:
         VERSION: ${{ env.VERSION }}
       shell: pwsh
       run: |
         New-Item -ItemType Directory -Force -Path _site/updates | Out-Null
+        New-Item -ItemType Directory -Force -Path _site/plugins | Out-Null
         
         # 检查更新包是否存在
         $zipFile = "WorkTools_v$env:VERSION.zip"
@@ -163,17 +182,28 @@ jobs:
         Write-Host "[OK] 更新包大小: $([math]::Round((Get-Item $zipFile).Length/1MB, 2)) MB"
         Write-Host "[OK] 更新包内容:"
         Expand-Archive -Path $zipFile -DestinationPath "_temp_check" -Force
-        Get-ChildItem "_temp_check/" -Recurse | ForEach-Object { 
+        Get-ChildItem "_temp_check/" -Recurse | ForEach-Object {
           $size = if ($_.Length) { " ($([math]::Round($_.Length/1KB, 2)) KB)" } else { "" }
           Write-Host "  - $($_.FullName.Replace((Resolve-Path _temp_check).Path, ''))$size"
         }
         Remove-Item -Recurse -Force "_temp_check"
         
         # 复制版本文件
-        Copy-Item server/version.json _site/updates/version.json
+        Copy-Item version.json _site/updates/version.json
         
         # 复制更新包
         Copy-Item $zipFile _site/updates/
+        
+        # 复制插件包到 plugins 目录
+        Write-Host "[OK] 复制插件包到 _site/plugins/"
+        Copy-Item -Recurse plugin_packages/* _site/plugins/
+        
+        # 显示插件包列表
+        Write-Host "[OK] 插件包列表:"
+        Get-ChildItem _site/plugins/ | ForEach-Object {
+          $size = if ($_.Length) { " ($([math]::Round($_.Length/1KB, 2)) KB)" } else { "" }
+          Write-Host "  - $($_.Name)$size"
+        }
         
         # 创建CNAME文件（自定义域名）
         "tools.kyeo.top" | Out-File -FilePath _site/CNAME -Encoding utf8

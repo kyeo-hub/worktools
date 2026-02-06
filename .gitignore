@@ -38,7 +38,6 @@ ENV/
 
 # Logs
 *.log
-worktools.log
 
 # OS
 .DS_Store
@@ -56,4 +55,3 @@ _site/
 
 # But keep the version.json
 !version.json
-!server/version.json

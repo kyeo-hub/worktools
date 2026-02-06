@@ -6,6 +6,7 @@
 """
 
 import os
+import sys
 import importlib
 import inspect
 import logging
@@ -44,20 +45,16 @@ class PluginManager(QObject):
     def load_plugins(self, plugin_directory: str):
         """
         从指定目录加载插件
-        
+
         Args:
             plugin_directory: 插件目录路径
         """
         if not os.path.exists(plugin_directory):
             logger.warning(f"插件目录不存在: {plugin_directory}")
             return
-            
+
         logger.info(f"开始加载插件，目录: {plugin_directory}")
-        
-        # 确保插件目录在Python路径中
-        if plugin_directory not in os.sys.path:
-            os.sys.path.insert(0, plugin_directory)
-            
+
         # 扫描插件目录中的Python文件
         for filename in os.listdir(plugin_directory):
             if filename.endswith('.py') and not filename.startswith('__'):
@@ -67,39 +64,52 @@ class PluginManager(QObject):
                 except Exception as e:
                     logger.error(f"加载插件模块 {module_name} 失败: {str(e)}")
                     self.plugin_error.emit(module_name, str(e))
-                    
+
         logger.info(f"插件加载完成，共加载 {len(self._plugins)} 个插件")
         
     def _load_plugin_module(self, module_name: str, plugin_directory: str):
         """
         加载单个插件模块
-        
+
         Args:
             module_name: 模块名称
             plugin_directory: 插件目录
         """
-        # 导入模块
-        module = importlib.import_module(module_name)
-        
+        try:
+            # 使用 spec 从文件加载模块，这样可以从用户目录加载
+            import importlib.util
+            plugin_file = os.path.join(plugin_directory, f"{module_name}.py")
+
+            spec = importlib.util.spec_from_file_location(module_name, plugin_file)
+            if spec is None or spec.loader is None:
+                raise ImportError(f"无法加载模块规范: {module_name}")
+
+            module = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = module
+            spec.loader.exec_module(module)
+        except Exception as e:
+            logger.error(f"加载插件模块文件 {module_name}.py 失败: {str(e)}")
+            raise
+
         # 查找模块中的插件类
         for name, obj in inspect.getmembers(module):
-            if (inspect.isclass(obj) and 
-                issubclass(obj, BasePlugin) and 
+            if (inspect.isclass(obj) and
+                issubclass(obj, BasePlugin) and
                 obj != BasePlugin):
-                
+
                 # 创建插件实例
                 plugin_instance = obj()
                 plugin_name = plugin_instance.get_name()
-                
+
                 # 注册插件
                 self._plugins[plugin_name] = plugin_instance
-                
+
                 # 按分类组织插件
                 category = plugin_instance.get_category()
                 if category not in self._plugin_categories:
                     self._plugin_categories[category] = []
                 self._plugin_categories[category].append(plugin_name)
-                
+
                 # 初始化插件
                 try:
                     plugin_instance.initialize()
@@ -108,7 +118,7 @@ class PluginManager(QObject):
                 except Exception as e:
                     logger.error(f"初始化插件 {plugin_name} 失败: {str(e)}")
                     self.plugin_error.emit(plugin_name, str(e))
-                
+
                 break  # 每个模块只处理一个插件类
                 
     def register_plugin(self, plugin: BasePlugin):

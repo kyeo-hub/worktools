@@ -127,9 +127,21 @@ class MainWindow(QMainWindow):
         
     def _load_plugins(self):
         """加载插件"""
-        # 获取用户插件目录
         from .plugins.plugin_manager_tool import get_user_plugins_dir
-        plugin_dir = get_user_plugins_dir()
+
+        # 获取用户插件目录
+        user_plugin_dir = get_user_plugins_dir()
+
+        # 检查用户目录是否有插件
+        if os.path.exists(user_plugin_dir) and any(f.endswith('.py') for f in os.listdir(user_plugin_dir) if not f.startswith('__')):
+            # 用户目录有插件，从用户目录加载
+            plugin_dir = user_plugin_dir
+            logger.info(f"从用户目录加载插件: {plugin_dir}")
+        else:
+            # 用户目录无插件，尝试从开发目录加载（用于开发测试）
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            plugin_dir = os.path.join(current_dir, "plugins")
+            logger.info(f"从开发目录加载插件: {plugin_dir}")
 
         # 加载插件
         self.plugin_manager.load_plugins(plugin_dir)

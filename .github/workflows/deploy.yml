@@ -52,13 +52,14 @@ jobs:
       shell: pwsh
       run: |
         $version = $env:VERSION
-        
+
         $jsonContent = Get-Content 'version.json' -Raw | ConvertFrom-Json
         $jsonContent.version = $version
         $jsonContent.update_url = 'https://tools.kyeo.top/updates/version.json'
         $jsonContent.download_url = "https://tools.kyeo.top/updates/WorkTools_v$version.zip"
-        $jsonContent | ConvertTo-Json -Depth 10 | Set-Content 'version.json' -Encoding UTF8
-        
+        # 使用 UTF8NoBOM 避免添加 BOM 头
+        $jsonContent | ConvertTo-Json -Depth 10 | Out-File 'version.json' -Encoding UTF8NoBOM
+
         Write-Host "version.json updated to: $version"
     
     - name: Build Application

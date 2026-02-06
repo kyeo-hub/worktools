@@ -91,6 +91,10 @@ def build():
         '--hidden-import=psutil',
         '--hidden-import=pyqtgraph',
         '--hidden-import=requests',
+        # 插件相关导入
+        '--hidden-import=worktools.plugin_manager',
+        '--hidden-import=worktools.plugins.plugin_manager_tool',
+        '--hidden-import=worktools.base_plugin',
         # 排除不需要的库（减少打包体积）
         '--exclude-module=matplotlib',
         '--exclude-module=pytest',

@@ -33,7 +33,20 @@ class WorkToolsApp(QApplication):
         
         # 应用设置
         self.setApplicationName("PyQt工作工具")
-        self.setApplicationVersion("1.0.9")
+        # 从 version.json 读取版本号
+        try:
+            import os
+            import json
+            version_file = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'version.json')
+            if os.path.exists(version_file):
+                with open(version_file, 'r', encoding='utf-8') as f:
+                    version_info = json.load(f)
+                    app_version = version_info.get('version', '1.0.0')
+            else:
+                app_version = '1.0.0'
+        except:
+            app_version = '1.0.0'
+        self.setApplicationVersion(app_version)
         self.setOrganizationName("WorkTools")
         
         # 设置应用程序样式

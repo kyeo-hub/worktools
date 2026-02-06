@@ -127,10 +127,10 @@ class MainWindow(QMainWindow):
         
     def _load_plugins(self):
         """加载插件"""
-        # 获取插件目录
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        plugin_dir = os.path.join(current_dir, "plugins")
-        
+        # 获取用户插件目录
+        from .plugins.plugin_manager_tool import get_user_plugins_dir
+        plugin_dir = get_user_plugins_dir()
+
         # 加载插件
         self.plugin_manager.load_plugins(plugin_dir)
         

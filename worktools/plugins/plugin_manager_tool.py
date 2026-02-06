@@ -4,6 +4,7 @@
 """
 
 import os
+import sys
 import json
 import zipfile
 import logging
@@ -19,6 +20,27 @@ import requests
 from worktools.base_plugin import BasePlugin
 
 logger = logging.getLogger(__name__)
+
+
+def get_user_plugins_dir():
+    """获取用户插件目录"""
+    # Windows: %APPDATA%/WorkTools/plugins
+    # Mac: ~/Library/Application Support/WorkTools/plugins
+    # Linux: ~/.config/WorkTools/plugins
+    if sys.platform == 'win32':
+        base_dir = os.environ.get('APPDATA', os.path.expanduser('~'))
+    elif sys.platform == 'darwin':
+        base_dir = os.path.expanduser('~/Library/Application Support')
+    else:
+        base_dir = os.path.expanduser('~/.config')
+
+    plugins_dir = os.path.join(base_dir, 'WorkTools', 'plugins')
+
+    # 确保目录存在
+    if not os.path.exists(plugins_dir):
+        os.makedirs(plugins_dir)
+
+    return plugins_dir
 
 
 class PluginManagerSettingsDialog(QDialog):
@@ -388,18 +410,18 @@ class PluginManagerTool(BasePlugin):
             
     def _get_installed_plugins(self) -> List[str]:
         """获取已安装的插件，返回插件ID列表（文件名即插件ID）"""
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
+        plugin_dir = get_user_plugins_dir()
         installed = []
-        
+
         if not os.path.exists(plugin_dir):
             return installed
-        
+
         for file in os.listdir(plugin_dir):
             if file.endswith('.py') and file != '__init__.py':
                 # 文件名（不含扩展名）即插件ID
                 plugin_id = os.path.splitext(file)[0]
                 installed.append(plugin_id)
-        
+
         return installed
         
     def _fill_plugin_table(self):
@@ -561,9 +583,9 @@ class PluginManagerTool(BasePlugin):
         # 开始下载
         self.operation_title.setText(f"正在下载 {plugin['name']}...")
         self.operation_detail.setText(f"来源: {plugin['url']}")
-        
-        plugin_dir = os.path.dirname(os.path.abspath(__file__))
-        
+
+        plugin_dir = get_user_plugins_dir()
+
         self.download_worker = PluginDownloadWorker(
             plugin['url'],
             plugin['id'],
@@ -587,9 +609,9 @@ class PluginManagerTool(BasePlugin):
         
         from PyQt5.QtWidgets import QApplication
         QApplication.processEvents()
-        
+
         try:
-            plugin_dir = os.path.dirname(os.path.abspath(__file__))
+            plugin_dir = get_user_plugins_dir()
             plugin_file = os.path.join(plugin_dir, f"{plugin_id}.py")
             
             self.progress_bar.setValue(30)

@@ -12,10 +12,15 @@ def generate_index():
     """生成HTML索引页面"""
     
     # 读取版本信息
-    version_file = 'server/version.json'
+    version_file = 'version.json'
     if os.path.exists(version_file):
         with open(version_file, 'r', encoding='utf-8') as f:
             version_info = json.load(f)
+        # 确保有 changelog 字段
+        if 'changelog' not in version_info and 'changes' in version_info:
+            version_info['changelog'] = version_info['changes']
+        if 'published_at' not in version_info and 'release_date' in version_info:
+            version_info['published_at'] = version_info['release_date']
     else:
         version_info = {
             "version": "1.0.0",

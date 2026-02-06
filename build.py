@@ -70,8 +70,22 @@ def build():
         # 图标
         '--icon=worktools/resources/icons/app.ico' if os.path.exists('worktools/resources/icons/app.ico') else '',
         # 添加数据文件 (Windows使用; Linux/Mac使用:)
-        '--add-data=worktools;worktools' if sys.platform == 'win32' else '--add-data=worktools:worktools',
+        # 排除 plugins 目录的具体插件文件，只保留 plugin_manager_tool 和 base_plugin
+        # 这样插件可以按需下载和安装
+        '--add-data=worktools/base_plugin.py;worktools' if sys.platform == 'win32' else '--add-data=worktools/base_plugin.py:worktools',
+        '--add-data=worktools/plugin_manager.py;worktools' if sys.platform == 'win32' else '--add-data=worktools/plugin_manager.py:worktools',
+        '--add-data=worktools/plugins/__init__.py;worktools/plugins' if sys.platform == 'win32' else '--add-data=worktools/plugins/__init__.py:worktools/plugins',
+        '--add-data=worktools/plugins/plugin_manager_tool.py;worktools/plugins' if sys.platform == 'win32' else '--add-data=worktools/plugins/plugin_manager_tool.py:worktools/plugins',
+        '--add-data=worktools/plugins/local_plugins.json;worktools/plugins' if sys.platform == 'win32' else '--add-data=worktools/plugins/local_plugins.json:worktools/plugins',
+        '--add-data=worktools/api_settings_dialog.py;worktools' if sys.platform == 'win32' else '--add-data=worktools/api_settings_dialog.py:worktools',
+        '--add-data=worktools/updater.py;worktools' if sys.platform == 'win32' else '--add-data=worktools/updater.py:worktools',
         '--add-data=version.json;.' if sys.platform == 'win32' else '--add-data=version.json:.',
+        '--add-data=worktools/navigation.py;worktools' if sys.platform == 'win32' else '--add-data=worktools/navigation.py:worktools',
+        '--add-data=worktools/workspace.py;worktools' if sys.platform == 'win32' else '--add-data=worktools/workspace.py:worktools',
+        '--add-data=worktools/main_window.py;worktools' if sys.platform == 'win32' else '--add-data=worktools/main_window.py:worktools',
+        '--add-data=worktools/app.py;worktools' if sys.platform == 'win32' else '--add-data=worktools/app.py:worktools',
+        # 添加resources目录
+        '--add-data=worktools/resources;worktools/resources' if sys.platform == 'win32' else '--add-data=worktools/resources:worktools/resources',
         # 隐藏导入
         '--hidden-import=PyQt5.sip',
         '--hidden-import=PyQt5.QtCore',
@@ -91,7 +105,7 @@ def build():
         '--hidden-import=psutil',
         '--hidden-import=pyqtgraph',
         '--hidden-import=requests',
-        # 插件相关导入
+        # 插件相关导入（不包含具体插件，只包含框架）
         '--hidden-import=worktools.plugin_manager',
         '--hidden-import=worktools.plugins.plugin_manager_tool',
         '--hidden-import=worktools.base_plugin',

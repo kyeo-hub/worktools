@@ -4,8 +4,15 @@
 """
 
 import os
+import sys
 import zipfile
 import json
+
+# 设置标准输出编码为UTF-8，避免Windows下的编码错误
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # 插件列表 - 文件名应与插件ID保持一致
 PLUGINS = [

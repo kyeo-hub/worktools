@@ -95,53 +95,25 @@ jobs:
       shell: pwsh
       run: |
         Write-Host "创建更新包，版本: $env:VERSION"
-        
+
         # 检查 exe 是否存在
         if (-not (Test-Path "dist/WorkTools.exe")) {
           Write-Error "错误: dist/WorkTools.exe 不存在!"
           exit 1
         }
-        
+
         # 创建更新目录
         New-Item -ItemType Directory -Force -Path update_package | Out-Null
-        
+
         # 复制主程序
         Copy-Item dist/WorkTools.exe update_package/
-        
+
         # 复制版本文件
         Copy-Item version.json update_package/
-        
+
         # 创建ZIP包
         Compress-Archive -Path update_package/* -DestinationPath "WorkTools_v$env:VERSION.zip" -Force
-        
-        # 生成服务器版本文件
-        $version = $env:VERSION
-        $changelog = @(
-            "新增图片水印功能",
-            "支持时间地点水印样式",
-            "支持实时天气获取",
-            "支持自定义水印样式",
-            "新增API配置功能",
-            "新增自动更新功能"
-        )
-        
-        $serverVersion = @{
-            version = $version
-            app_name = "WorkTools"
-            changelog = $changelog
-            download_url = "https://tools.kyeo.top/updates/WorkTools_v$version.zip"
-            mandatory = $false
-            published_at = "2024-02-05"
-            min_version = "1.0.0"
-        }
-        
-        $serverVersion | ConvertTo-Json -Depth 10 | Set-Content 'server/version.json' -Encoding UTF8
-        
-        Write-Host "服务器版本文件已生成: $version"
-        
-        # 清理
-        Remove-Item -Recurse -Force update_package
-        
+
         Write-Host "更新包创建完成"
         Get-ChildItem WorkTools_v*.zip | Select-Object Name, @{N="Size(MB)";E={[math]::Round($_.Length/1MB,2)}}
     

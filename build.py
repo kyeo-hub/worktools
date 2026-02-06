@@ -31,16 +31,25 @@ def clean_build():
 
 def write_version_file():
     """写入版本信息文件"""
-    version_info = {
-        "version": VERSION,
-        "app_name": APP_NAME,
-        "update_url": "https://tools.kyeo.top/updates/version.json",
-        "download_url": f"https://tools.kyeo.top/updates/WorkTools_v{VERSION}.zip"
-    }
-    
+    # 读取现有的 version.json，保留 changelog 等信息
+    if os.path.exists('version.json'):
+        try:
+            with open('version.json', 'r', encoding='utf-8') as f:
+                version_info = json.load(f)
+        except:
+            version_info = {}
+    else:
+        version_info = {}
+
+    # 更新版本和 URL，保留其他字段（如 changelog）
+    version_info["version"] = VERSION
+    version_info["app_name"] = APP_NAME
+    version_info["update_url"] = "https://tools.kyeo.top/updates/version.json"
+    version_info["download_url"] = f"https://tools.kyeo.top/updates/WorkTools_v{VERSION}.zip"
+
     with open('version.json', 'w', encoding='utf-8') as f:
-        json.dump(version_info, f, indent=2)
-    
+        json.dump(version_info, f, indent=2, ensure_ascii=False)
+
     print(f"[Version] Written: {VERSION}")
 
 def build():
@@ -102,23 +111,23 @@ def build():
 def create_update_package():
     """创建更新包"""
     import zipfile
-    
+
     print("[Package] Creating update package...")
-    
+
     # 创建更新目录
     update_dir = 'update_package'
     if os.path.exists(update_dir):
         shutil.rmtree(update_dir)
     os.makedirs(update_dir)
-    
+
     # 复制主程序
     exe_path = f'dist/{APP_NAME}.exe'
     if os.path.exists(exe_path):
         shutil.copy2(exe_path, update_dir)
-    
+
     # 复制版本文件
     shutil.copy2('version.json', update_dir)
-    
+
     # 创建ZIP包
     zip_name = f'{APP_NAME}_v{VERSION}.zip'
     with zipfile.ZipFile(zip_name, 'w', zipfile.ZIP_DEFLATED) as zf:
@@ -127,28 +136,9 @@ def create_update_package():
                 file_path = os.path.join(root, file)
                 arcname = os.path.relpath(file_path, update_dir)
                 zf.write(file_path, arcname)
-    
+
     print(f"[Package] Created: {zip_name}")
-    
-    # 生成服务器端version.json
-    server_version = {
-        "version": VERSION,
-        "app_name": APP_NAME,
-        "changelog": [
-            "新增图片水印功能",
-            "支持时间地点水印",
-            "支持实时天气获取"
-        ],
-        "download_url": f"https://your-server.com/updates/{zip_name}",
-        "mandatory": False,
-        "published_at": "2024-02-04"
-    }
-    
-    with open('server_version.json', 'w', encoding='utf-8') as f:
-        json.dump(server_version, f, indent=2, ensure_ascii=False)
-    
-    print("[Package] Server version file created: server_version.json")
-    
+
     # 清理临时目录
     shutil.rmtree(update_dir)
 

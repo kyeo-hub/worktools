@@ -95,13 +95,9 @@ class PluginManager(QObject):
                         self._plugin_categories[category].append(plugin_name)
 
                         # 初始化插件
-                        try:
-                            plugin_instance.initialize()
-                            logger.info(f"插件 {plugin_name} 加载成功")
-                            self.plugin_loaded.emit(plugin_name)
-                        except Exception as e:
-                            logger.error(f"初始化插件 {plugin_name} 失败: {str(e)}")
-                            self.plugin_error.emit(plugin_name, str(e))
+                        plugin_instance.initialize()
+                        logger.info(f"插件 {plugin_name} 加载成功")
+                        self.plugin_loaded.emit(plugin_name)
 
                 except Exception as e:
                     logger.error(f"加载插件模块 {module_name} 失败: {str(e)}")

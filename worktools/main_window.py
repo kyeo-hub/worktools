@@ -134,6 +134,9 @@ class MainWindow(QMainWindow):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         dev_plugin_dir = os.path.join(current_dir, "plugins")
 
+        # 清空现有插件
+        self.plugin_manager.clear_plugins()
+
         # 从两个目录加载插件
         # 1. 先从开发目录加载（包含plugin_manager_tool.py等内置插件）
         if os.path.exists(dev_plugin_dir):
@@ -144,6 +147,9 @@ class MainWindow(QMainWindow):
         if os.path.exists(user_plugin_dir):
             logger.info(f"从用户目录加载插件: {user_plugin_dir}")
             self.plugin_manager.load_plugins(user_plugin_dir)
+
+        # 清空工作区
+        self.workspace.clear_plugins()
 
         # 更新导航面板
         plugins = self.plugin_manager.get_all_plugins()

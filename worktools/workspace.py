@@ -128,24 +128,41 @@ class Workspace(QWidget):
     def remove_plugin(self, plugin_name: str):
         """
         从工作区移除插件
-        
+
         Args:
             plugin_name: 插件名称
         """
         if plugin_name not in self._plugins:
             logger.warning(f"尝试移除不存在的插件: {plugin_name}")
             return
-            
+
         # 从堆栈控件中移除
         plugin_info = self._plugins[plugin_name]
         self.stacked_widget.removeWidget(plugin_info['widget'])
-        
+
         # 如果是当前插件，切换到空状态
         if self._current_plugin == plugin_name:
             self._current_plugin = None
             self.stacked_widget.setCurrentIndex(self.empty_index)
             self.title_label.setText("请选择功能")
             self.settings_button.setEnabled(False)
+
+    def clear_plugins(self):
+        """清空所有插件"""
+        # 移除所有插件控件
+        for plugin_name, plugin_info in self._plugins.items():
+            self.stacked_widget.removeWidget(plugin_info['widget'])
+
+        # 清空插件字典
+        self._plugins.clear()
+        self._current_plugin = None
+
+        # 切换到空状态
+        self.stacked_widget.setCurrentIndex(self.empty_index)
+        self.title_label.setText("请选择功能")
+        self.settings_button.setEnabled(False)
+
+        logger.info("工作区插件已清空")
             
         # 从映射中移除
         del self._plugins[plugin_name]

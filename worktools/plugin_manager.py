@@ -33,7 +33,7 @@ class PluginManager(QObject):
     def __init__(self, parent=None):
         """
         初始化插件管理器
-        
+
         Args:
             parent: 父对象
         """
@@ -41,6 +41,13 @@ class PluginManager(QObject):
         self._plugins: Dict[str, BasePlugin] = {}  # 插件名到插件实例的映射
         self._active_plugin: Optional[str] = None  # 当前激活的插件名
         self._plugin_categories: Dict[str, List[str]] = {}  # 分类到插件名的映射
+
+    def clear_plugins(self):
+        """清空所有插件"""
+        self._plugins.clear()
+        self._plugin_categories.clear()
+        self._active_plugin = None
+        logger.info("插件管理器已清空")
         
     def load_plugins(self, plugin_directory: str):
         """
@@ -59,15 +66,43 @@ class PluginManager(QObject):
         for filename in os.listdir(plugin_directory):
             if filename.endswith('.py') and not filename.startswith('__'):
                 module_name = filename[:-3]  # 去掉.py后缀
-                plugin_name = module_name  # 插件名称基于文件名
 
-                # 检查是否已加载同名插件
-                if plugin_name in self._plugins:
-                    logger.info(f"插件 {plugin_name} 已存在，跳过")
-                    continue
-
+                # 先加载模块，获取插件实例后检查名称冲突
                 try:
-                    self._load_plugin_module(module_name, plugin_directory)
+                    plugin_instance = self._load_plugin_module(module_name, plugin_directory)
+
+                    if plugin_instance:
+                        # 获取插件的实际名称
+                        plugin_name = plugin_instance.get_name()
+
+                        # 检查是否已加载同名插件
+                        if plugin_name in self._plugins:
+                            # 用户目录的插件替换开发目录的插件
+                            old_plugin = self._plugins[plugin_name]
+                            logger.info(f"插件 {plugin_name} 已被替换（从 {type(old_plugin).__module__} 到 {module_name}）")
+                            # 从分类中移除旧插件
+                            old_category = old_plugin.get_category()
+                            if old_category in self._plugin_categories and plugin_name in self._plugin_categories[old_category]:
+                                self._plugin_categories[old_category].remove(plugin_name)
+
+                        # 注册插件
+                        self._plugins[plugin_name] = plugin_instance
+
+                        # 按分类组织插件
+                        category = plugin_instance.get_category()
+                        if category not in self._plugin_categories:
+                            self._plugin_categories[category] = []
+                        self._plugin_categories[category].append(plugin_name)
+
+                        # 初始化插件
+                        try:
+                            plugin_instance.initialize()
+                            logger.info(f"插件 {plugin_name} 加载成功")
+                            self.plugin_loaded.emit(plugin_name)
+                        except Exception as e:
+                            logger.error(f"初始化插件 {plugin_name} 失败: {str(e)}")
+                            self.plugin_error.emit(plugin_name, str(e))
+
                 except Exception as e:
                     logger.error(f"加载插件模块 {module_name} 失败: {str(e)}")
                     self.plugin_error.emit(module_name, str(e))
@@ -81,6 +116,9 @@ class PluginManager(QObject):
         Args:
             module_name: 模块名称
             plugin_directory: 插件目录
+
+        Returns:
+            插件实例，如果加载失败返回 None
         """
         try:
             # 使用 spec 从文件加载模块，这样可以从用户目录加载
@@ -104,29 +142,12 @@ class PluginManager(QObject):
                 issubclass(obj, BasePlugin) and
                 obj != BasePlugin):
 
-                # 创建插件实例
+                # 创建插件实例并返回
                 plugin_instance = obj()
-                plugin_name = plugin_instance.get_name()
+                return plugin_instance
 
-                # 注册插件
-                self._plugins[plugin_name] = plugin_instance
-
-                # 按分类组织插件
-                category = plugin_instance.get_category()
-                if category not in self._plugin_categories:
-                    self._plugin_categories[category] = []
-                self._plugin_categories[category].append(plugin_name)
-
-                # 初始化插件
-                try:
-                    plugin_instance.initialize()
-                    logger.info(f"插件 {plugin_name} 加载成功")
-                    self.plugin_loaded.emit(plugin_name)
-                except Exception as e:
-                    logger.error(f"初始化插件 {plugin_name} 失败: {str(e)}")
-                    self.plugin_error.emit(plugin_name, str(e))
-
-                break  # 每个模块只处理一个插件类
+        # 没有找到插件类
+        return None
                 
     def register_plugin(self, plugin: BasePlugin):
         """

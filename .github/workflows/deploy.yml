@@ -42,7 +42,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyinstaller Pillow PyQt5 pandas openpyxl numpy psutil pyqtgraph
+        pip install pyinstaller Pillow PyQt5 pandas openpyxl numpy psutil pyqtgraph requests
         
     # Windows自带zip功能，无需安装
     

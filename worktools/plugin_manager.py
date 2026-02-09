@@ -59,6 +59,13 @@ class PluginManager(QObject):
         for filename in os.listdir(plugin_directory):
             if filename.endswith('.py') and not filename.startswith('__'):
                 module_name = filename[:-3]  # 去掉.py后缀
+                plugin_name = module_name  # 插件名称基于文件名
+
+                # 检查是否已加载同名插件
+                if plugin_name in self._plugins:
+                    logger.info(f"插件 {plugin_name} 已存在，跳过")
+                    continue
+
                 try:
                     self._load_plugin_module(module_name, plugin_directory)
                 except Exception as e:
